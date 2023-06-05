@@ -1,179 +1,189 @@
+#include <iostream>
 #include <bits/stdc++.h>
+#include <cstdint>
+#include <random>
+#include <cmath>
 using namespace std;
-#define ll long long
-#define v vector<ll>
-const ll N = 1e5 + 1;
 #define FAST                     \
     ios::sync_with_stdio(false); \
     cin.tie(NULL);               \
     cout.tie(NULL);
 
-vector<ll> primeConatiner;
-
-// filling prime number for random picking in container
-
-void FillPrimeNumber()
+// Function to calculate the greatest common divisor (GCD) of two numbers using extended Euclidean algorithm
+uint64_t gcdExtended(uint64_t a, uint64_t b, uint64_t *x, uint64_t *y)
 {
-    vector<bool> sieve(100001, true);
-    sieve[0] = sieve[1] = false;
-
-    // marking false which are not prime number.
-
-    for (ll i = 2; i * i <= 100000; i++)
-        if (sieve[i] == true)
-            for (ll j = i * i; j <= 100000; j += i)
-                sieve[j] = false;
-
-    /*
-    pushing number in container which are true bcz they are
-    prime number.
-    */
-
-    // ofstream outdata;
-    // outdata.open("primes.txt");
-    for (ll i = 0; i < sieve.size(); i++)
-        if (sieve[i])
-            primeConatiner.push_back(i);
-    // outdata << i << " ";
-
-    // outdata.close();
-}
-
-ll pickRandomPrime()
-{
-    srand(time(NULL));
-    // choosing random index from primeContainer.
-    ll k = rand() % primeConatiner.size();
-
-    // marking the starting position as first index
-    auto itr = primeConatiner.begin() + k;
-
-    // looping until we get to picked index.
-    // while (k--)
-    // {
-    //     itr++;
-    // }
-
-    /*
-    erasing the picked number so no duplicate number been picked
-    second time.
-    */
-
-    ll data = primeConatiner[k];
-    // auto index = find(primeConatiner.begin(), primeConatiner.end(), data);
-    primeConatiner.erase(itr);
-
-    // returning the picked prime   number.
-    return data;
-}
-
-// Converting Decimal to Binary
-
-vector<ll> ConvertNumToBinary(ll num)
-{
-    // string to store binary number
-    vector<ll> binaryNum(32);
-
-    // counter for binary array
-    ll i = 0;
-
-    while (num > 0)
+    if (b == 0)
     {
-        // storing remainder in binary array
-        binaryNum[i] = num % 2;
-        num = num / 2;
-        i++;
+        *x = 1;
+        *y = 0;
+        return a;
     }
 
-    // erasing extra zeros in 32-bit binary array
-    binaryNum.erase(binaryNum.begin() + i, binaryNum.end());
+    uint64_t x1, y1;
+    uint64_t gcd = gcdExtended(b, a % b, &x1, &y1);
 
-    // storing binary array in reverse order
-    reverse(binaryNum.begin(), binaryNum.end());
-
-    // returning the binary array of number num
-    return binaryNum;
-}
-
-// Square and Multiply Algorithm OR Fast Modulor Exponentiation
-// (pow(a,b) % c) OR (a^b mod c)
-
-ll calculate(ll a, ll b, ll c)
-{
-    vector<ll> binaryOfB = ConvertNumToBinary(b);
-
-    ll i = 1;
-    ll prev = a;
-    while (i < binaryOfB.size())
-    {
-        ll tmp = pow(prev, 2);
-        if (binaryOfB[i])
-            prev = ((tmp % c) * a) % c;
-        else
-            prev = tmp % c;
-        i++;
-    }
-
-    return prev;
-}
-
-ll gcdExtended(ll a, ll b, ll *x, ll *y)
-{
-    // Base Case
-    if (a == 0)
-    {
-        *x = 0;
-        *y = 1;
-        return b;
-    }
-
-    ll x1, y1; // To store results of recursive call
-    ll gcd = gcdExtended(b % a, a, &x1, &y1);
-
-    // Update x and y using results of
-    // recursive call
-    *x = y1 - (b / a) * x1;
-    *y = x1;
+    *x = y1;
+    *y = x1 - (a / b) * y1;
 
     return gcd;
 }
 
+// Function to calculate (a^b) % m using binary exponentiation
+uint64_t modularExponentiation(uint64_t a, uint64_t b, uint64_t m)
+{
+    uint64_t res = 1; // Initialize result
+
+    a = a % m; // Update a if it is more than or equal to m
+
+    if (a == 0)
+        return 0; // In case a is divisible by m
+
+    while (b > 0)
+    {
+        // If b is odd, multiply res with a and take modulo m
+        if (b & 1)
+            res = ((res % m) * (a % m)) % m;
+
+        // b must be even now
+        b = b >> 1; // b = b/2
+        a = ((a % m) * (a % m)) % m;
+    }
+    return res;
+}
+
+// Function to calculate the modular multiplicative inverse of 'e' modulo 'tot_n'
+uint64_t modInverse(uint64_t e, uint64_t tot_n)
+{
+    int64_t r1 = tot_n, r2 = e;
+    int64_t t1 = 0, t2 = 1;
+    int64_t q, r, t;
+
+    while (r2 != 0)
+    {
+        q = r1 / r2;
+        r = r1 - q * r2;
+        r1 = r2;
+        r2 = r;
+        t = t1 - q * t2;
+        t1 = t2;
+        t2 = t;
+    }
+
+    // Make sure the result is positive
+    uint64_t inverse = (t1 < 0) ? (t1 + tot_n) : t1;
+    return inverse;
+}
+
+// Function to perform the Miller-Rabin primality test
+bool millerRabinTest(uint64_t n, int k)
+{
+    if (n <= 1 || n == 4)
+        return false;
+    if (n <= 3)
+        return true;
+
+    // Find r such that n = 2^d * r + 1 for some r >= 1
+    uint64_t d = n - 1;
+    while (d % 2 == 0)
+        d >>= 1;
+
+    // Perform the Miller-Rabin test for 'k' iterations
+    for (int i = 0; i < k; ++i)
+    {
+        // Generate a random witness 'a' in the range [2, n-2]
+        random_device rd;
+        mt19937_64 gen(rd());
+        uniform_int_distribution<uint64_t> dis(2, n - 2);
+        uint64_t a = dis(gen);
+
+        // Compute a^(d % n)
+        uint64_t x = modularExponentiation(a, d, n);
+
+        if (x == 1 || x == n - 1)
+            continue;
+
+        // Perform the Miller-Rabin test for 'd' iterations
+        bool isPrime = false;
+        for (uint64_t r = 1; r < d; r <<= 1)
+        {
+            x = modularExponentiation(x, 2, n);
+
+            if (x == 1)
+                return false;
+            if (x == n - 1)
+            {
+                isPrime = true;
+                break;
+            }
+        }
+
+        if (!isPrime)
+            return false;
+    }
+
+    return true;
+}
+
+// Function to generate a random prime number with the given number of bits
+uint64_t generateRandomPrime(int numBits)
+{
+    if (numBits <= 0)
+        return 0;
+
+    srand(time(NULL));
+    mt19937_64 gen(time(nullptr));
+
+    uint64_t minVal = pow(2, numBits - 1);
+    uint64_t maxVal = pow(2, numBits) - 1;
+
+    uniform_int_distribution<uint64_t> dis;
+
+    uint64_t num = 0;
+    do
+    {
+        num = dis(gen, decltype(dis)::param_type(minVal, maxVal));
+    } while (!millerRabinTest(num, 10));
+
+    return num;
+}
+
 void solve()
 {
-    // Fill the prime number in container.
+    int numBits = 16; // Number of bits for the prime numbers
 
-    FillPrimeNumber();
+    uint64_t p = generateRandomPrime(numBits);
+    uint64_t q = p;
+    while (q == p)
+    {
+        q = generateRandomPrime(numBits);
+    }
 
-    // Select Two Random Large Prime Numbers.
-
-    ll p = pickRandomPrime();
-    ll q = pickRandomPrime();
-
-    cout << "The Two Random Number are: " << endl;
+    cout << "The Two Random Numbers are: " << endl;
     cout << "p: " << p << endl;
     cout << "q: " << q << endl;
 
     // Enter The Plain Text
+    string m;
+    getline(cin, m);
 
-    ll m;
-    cin >> m;
-
-    // n is called Modulous of encrption and decryption.
-
-    ll n = p * q;
+    // n is called Modulus of encryption and decryption.
+    uint64_t n = p * q;
+    cout << "n: " << n << endl;
 
     /*
-        choose a number e less then n,such that n is relatively
-        prime to (p-1) (q-1). it means that e and (p-1)*(q-1)
-        have no common factor except 1 therefore gcd(e,phi(n)) = 1
+        choose a number e less than n, such that n is relatively
+        prime to (p-1) * (q-1). It means that e and (p-1) * (q-1)
+        have no common factor except 1. Therefore, gcd(e, phi(n)) = 1
     */
 
-    ll e = 2;
-    ll phi = (p - 1) * (q - 1);
+    uint64_t e = 2;
+    uint64_t phi = (p - 1) * (q - 1);
     cout << "Phi: " << phi << endl;
+
+    // Find the optimal value of 'e' that is relatively prime to phi(n)
     while (e < phi)
     {
-        ll x, y;
+        uint64_t x, y;
         // e must be co-prime and smaller than phi
         if (gcdExtended(e, phi, &x, &y) == 1)
             break;
@@ -183,54 +193,46 @@ void solve()
 
     cout << "e: " << e << endl;
 
-    cout << "Public Key: {" << e << "," << n << "}" << endl;
+    cout << "Public Key: {" << e << ", " << n << "}" << endl;
 
     /*
-    then the public key is {e,n}. a plain text message m is encrypted
-    using public key {e,n} to get ciphertext C
+        Then the public key is {e, n}. A plain text message m is encrypted
+        using public key {e, n} to get ciphertext C.
     */
-
-    // c = pow(m,e) % n OR m^e mod n
-
-    ll c = calculate(m, e, n);
-
-    cout << "Ciphet Text: " << c << endl;
-
-    // To determine the private key
-
-    ll k = 0;
-    while (floor(double(double(1 + (k * phi)) / double(e))) != ceil(double(double(1 + (k * phi)) / double(e))))
+    vector<uint64_t> CipherText;
+    for (int i = 0; i < m.size(); i++)
     {
-        k++;
+        uint64_t ct = modularExponentiation(m[i] - 0, e, n);
+        CipherText.push_back(ct);
     }
-
-    cout << "k: " << k << endl;
-
-    ll d = (1 + (k * phi)) / e;
-
-    cout << "Private Key: {" << d << "," << n << "}" << endl;
+    cout << "CipherText: ";
+    for (auto it : CipherText)
+    {
+        cout << char(it % 128);
+    }
+    cout << endl;
 
     /*
-    the private key is {d,n}. a ciphertext message c is decrypted using
-    private key {d,n}. to calculate plain text m from ciphertext
+        To decrypt the received ciphertext C, use your private key exponent d.
+        The private key exponent d is calculated by the formula:
+        d = (k * Phi + 1) / e
     */
-
-    // m = pow(c,d) % n OR c^d mod n
-
-    m = calculate(c, d, n);
-
-    cout << "Plain Text: " << m << endl;
+    uint64_t d = modInverse(e, phi);
+    cout << "d: " << d << endl;
+    cout << "Private Key: {" << d << ", " << n << "}" << endl;
+    
+    // Decrypt the ciphertext using private key exponent d
+    string DecipherText;
+    for (auto it : CipherText)
+    {
+        uint64_t dt = modularExponentiation(it, d, n) + 0;
+        DecipherText.push_back(dt);
+    }
+    cout << "DecipherText: " << DecipherText << endl;
 }
 
 int main()
 {
-
-    FAST;
-#ifndef ONLINE_JUDGE
-    freopen("input", "r", stdin);
-    freopen("output", "w", stdout);
-#endif
-
     solve();
 
     return 0;
