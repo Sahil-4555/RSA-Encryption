@@ -30,10 +30,6 @@ The code performs the following steps:
 
 - You can modify the number of bits for the generated prime numbers by changing the `numBits` variable in the `solve()` function.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 ## Acknowledgments
 
 - The code is based on the RSA algorithm for encryption and decryption.
