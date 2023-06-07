@@ -149,13 +149,13 @@ uint64_t generateRandomPrime(int numBits)
 
 void solve()
 {
-    // Number of bits for the prime numbers
-    int numBits = 16; 
-  
+    int numBits = 16; // Number of bits for the prime numbers
+
     // Enter The Plain Text
     string m;
+    cout<<"Enter Message: "<<endl;
     getline(cin, m);
-  
+
     uint64_t p = generateRandomPrime(numBits);
     uint64_t q = p;
     while (q == p)
@@ -166,7 +166,7 @@ void solve()
     cout << "The Two Random Numbers are: " << endl;
     cout << "p: " << p << endl;
     cout << "q: " << q << endl;
-  
+
     // n is called Modulus of encryption and decryption.
     uint64_t n = p * q;
     cout << "n: " << n << endl;
@@ -234,6 +234,8 @@ void solve()
 
 int main()
 {
+
+    FAST;
     solve();
 
     return 0;
