@@ -1,27 +1,38 @@
 package main
 
 import (
+	"bufio"
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"os"
 )
 
 // gcdExtended computes the extended Euclidean algorithm to find the greatest common divisor and the Bezout's coefficients.
 func gcdExtended(a, b *big.Int, x, y *big.Int) *big.Int {
 	zero := big.NewInt(0)
 
+	// If b is zero
 	if b.Cmp(zero) == 0 {
+		// Set x to 1
 		x.Set(big.NewInt(1))
+		// Set y to 0
 		y.Set(big.NewInt(0))
+		// Return a
 		return a
 	}
 
 	var x1, y1 big.Int
+	// Recursive call with updated values
 	gcd := gcdExtended(b, new(big.Int).Mod(a, b), &x1, &y1)
 
+	// Set x to the value of y1
 	x.Set(&y1)
+
+	// Set y to the subtraction of x1 and the product of (a/b) and y1
 	y.Set(new(big.Int).Sub(&x1, new(big.Int).Div(a, b).Mul(&y1, b)))
 
+	// Return the gcd
 	return gcd
 }
 
@@ -30,25 +41,34 @@ func modularExponentiation(a, b, m *big.Int) *big.Int {
 	one := big.NewInt(1)
 	zero := big.NewInt(0)
 
-	res := new(big.Int).Set(one) // Initialize result
+	// Initialize result to 1
+	res := new(big.Int).Set(one)
 
-	a.Mod(a, m) // Update a if it is more than or equal to m
+	// Update a if it is more than or equal to m
+	a.Mod(a, m)
 
 	if a.Cmp(zero) == 0 {
-		return zero // In case a is divisible by m
+		// If a is divisible by m, return 0
+		return zero
 	}
 
+	// While b is greater than 0
 	for b.Cmp(zero) > 0 {
 		// If b is odd, multiply res with a and take modulo m
-		if new(big.Int).And(b, one).Cmp(one) == 0 {
+		if new(big.Int).And(b, one).Cmp(one) == 0 { // Check if b is odd
+			// Multiply res with a and take modulo m
 			res.Mul(res, a).Mod(res, m)
 		}
 
 		// b must be even now
-		b.Rsh(b, 1)           // b = b/2 or b = b >> 1
-		a.Mul(a, a).Mod(a, m) // a = (a^2) % m
+		// Right shift b by 1 (equivalent to b/2 or b = b >> 1)
+		b.Rsh(b, 1)
+		// a = (a^2) % m
+		// Square a and take modulo m
+		a.Mul(a, a).Mod(a, m)
 	}
 
+	// Return the result
 	return res
 }
 
@@ -63,14 +83,17 @@ func modInverse(num, modulus *big.Int) *big.Int {
 
 	// If the gcd is not 1, the modular inverse doesn't exist
 	if gcd.Cmp(big.NewInt(1)) != 0 {
+		// Return 0 if modular inverse doesn't exist
 		return big.NewInt(0)
 	}
 
 	// Make sure x is positive
-	if x.Sign() < 0 {
+	if x.Sign() < 0 { // If x is negative
+		// Add modulus to x
 		x.Add(x, modulus)
 	}
 
+	// Return the modular inverse
 	return x
 }
 
@@ -80,96 +103,107 @@ func generateRandomCoprime(phi *big.Int) *big.Int {
 	one := big.NewInt(1)
 
 	for {
+		// Generate a random integer e between 0 and phi-1
 		e, err := rand.Int(rand.Reader, phi)
 		if err != nil {
+			// Return 0 if there is an error
 			return big.NewInt(0)
 		}
 
 		// Check if e is coprime with phi and satisfies the condition
-		if gcdExtended(e, phi, new(big.Int), new(big.Int)).Cmp(one) == 0 &&
-			e.Cmp(two) >= 0 && e.Cmp(phi) < 0 {
-			return e
+		if gcdExtended(e, phi, new(big.Int), new(big.Int)).Cmp(one) == 0 && // If e and phi are coprime
+			e.Cmp(two) >= 0 && e.Cmp(phi) < 0 { // If e is greater than or equal to 2 and less than phi
+			return e // Return e
 		}
 	}
 }
 
-// millerRabinTest performs the Miller-Rabin primality test on the given number n using k iterations.
+// millerRabinTest performs the Miller-Rabin primality test to check if a number is probably prime.
 func millerRabinTest(n *big.Int, k int) bool {
 	zero := big.NewInt(0)
 	one := big.NewInt(1)
 	two := big.NewInt(2)
 	three := big.NewInt(3)
-	four := big.NewInt(4)
 
-	if n.Cmp(one) <= 0 || n.Cmp(four) == 0 {
-		return false
-	}
-	if n.Cmp(three) <= 0 {
+	if n.Cmp(two) == 0 || n.Cmp(three) == 0 { // If n is 2 or 3, return true
 		return true
 	}
 
-	// Find r such that n = 2^d * r + 1 for some r >= 1
-	d := new(big.Int).Sub(n, one)
-	for new(big.Int).Mod(d, two).Cmp(zero) == 0 {
-		d.Rsh(d, 1)
+	if n.Cmp(two) < 0 || new(big.Int).And(n, one).Cmp(zero) == 0 { // If n is less than 2 or even, return false
+		return false
 	}
 
-	// Perform the Miller-Rabin test for 'k' iterations
-	for i := 0; i < k; i++ {
-		// Generate a random witness 'a' in the range [2, n-2] -> 1 < a < n-1
-		a, err := rand.Int(rand.Reader, new(big.Int).Sub(n, four))
+	// Express n-1 as 2^r * d, where d is an odd number
+	r := 0
+	d := new(big.Int).Sub(n, one)
+	for d.Bit(0) == 0 { // While the least significant bit of d is 0
+		r++         // Increment r
+		d.Rsh(d, 1) // Right shift d by 1 (equivalent to d/2)
+	}
+
+	for i := 0; i < k; i++ { // Repeat the test for k iterations
+		a, err := rand.Int(rand.Reader, new(big.Int).Sub(n, three)) // Generate a random number a between 2 and n-2
 		if err != nil {
-			panic(err)
+			return false // Return false if there is an error
 		}
-		a.Add(a, two)
+		a.Add(a, two) // Add 2 to a to make it fall within the range of [2, n-2]
 
-		// Compute a^(d % n)
-		x := modularExponentiation(a, d, n)
+		x := modularExponentiation(a, d, n) // Compute a^d modulo n
 
-		if x.Cmp(one) == 0 || x.Cmp(new(big.Int).Sub(n, one)) == 0 {
-			continue
+		if x.Cmp(one) == 0 || x.Cmp(new(big.Int).Sub(n, one)) == 0 { // If x is 1 or n-1
+			continue // Continue to the next iteration
 		}
 
-		// Perform the Miller-Rabin test for 'd' iterations
-		isPrime := false
-		for r := new(big.Int).Set(one); r.Cmp(d) < 0; r.Lsh(r, 1) {
-			x = modularExponentiation(x, two, n)
+		for j := 1; j < r; j++ { // Repeat r-1 times
+			x.Mul(x, x).Mod(x, n) // Square x and take modulo n
 
-			if x.Cmp(one) == 0 {
+			if x.Cmp(one) == 0 { // If x is 1, return false (composite)
 				return false
 			}
-			if x.Cmp(new(big.Int).Sub(n, one)) == 0 {
-				isPrime = true
-				break
+
+			if x.Cmp(new(big.Int).Sub(n, one)) == 0 { // If x is n-1
+				break // Break the inner loop and continue to the next iteration
 			}
 		}
 
-		if !isPrime {
+		if x.Cmp(new(big.Int).Sub(n, one)) != 0 { // If x is not n-1, return false (composite)
 			return false
 		}
 	}
 
-	return true
+	return true // If the number passes all iterations, return true (probably prime)
 }
 
-// generateRandomPrime generates a random prime number with the specified number of bits.
+// generateRandomPrime generates a random prime number with the specified bit length.
 func generateRandomPrime(numBits int) *big.Int {
+	// Return 0 if numBits is less than or equal to 0
 	if numBits <= 0 {
 		return big.NewInt(0)
 	}
 
+	// Calculate the minimum value as 2^(numBits-1)
 	minVal := new(big.Int).Exp(big.NewInt(2), big.NewInt(int64(numBits-1)), nil)
+
+	// Calculate the maximum value as 2^numBits
 	maxVal := new(big.Int).Exp(big.NewInt(2), big.NewInt(int64(numBits)), nil)
+
+	// Subtract 1 from the maximum value
 	maxVal.Sub(maxVal, big.NewInt(1))
 
 	for {
+		// Generate a random number between minVal and maxVal
 		num, err := rand.Int(rand.Reader, new(big.Int).Sub(maxVal, minVal))
 		if err != nil {
+			// Panic if there is an error generating the random number
 			panic(err)
 		}
+
+		// Add minVal to the generated random number
 		num.Add(num, minVal)
 
-		if millerRabinTest(num, 10) {
+		// If the number passes the Miller-Rabin test with 20 iterations
+		if millerRabinTest(num, 20) {
+			// Return the prime number
 			return num
 		}
 	}
@@ -178,9 +212,11 @@ func generateRandomPrime(numBits int) *big.Int {
 func solve() {
 
 	// Enter The Plain Text
-	var m int64
-	fmt.Println("Enter Your Message:")
-	fmt.Scanln(&m)
+	var inputText string
+	fmt.Println("Enter Input:")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	inputText = scanner.Text()
 
 	// Number of bits for the prime numbers
 	numBits := 64
@@ -193,7 +229,7 @@ func solve() {
 		q = generateRandomPrime(numBits)
 	}
 
-	fmt.Println("The Two Random Prime Numbers are:")
+	fmt.Println("The Two Random Prime Numbers are: ")
 	fmt.Println("p:", p)
 	fmt.Println("q:", q)
 
@@ -209,7 +245,7 @@ func solve() {
 	phi := new(big.Int).Mul(new(big.Int).Sub(p, one), new(big.Int).Sub(q, one))
 	fmt.Println("Phi:", phi)
 
-	// e value is generated that is coprime with phi
+	// Generate e value that is coprime with phi
 	e := generateRandomCoprime(phi)
 	fmt.Println("e:", e)
 
@@ -228,8 +264,27 @@ func solve() {
 
 	d := new(big.Int)
 	d = modInverse(e, phi)
-	cipherText := modularExponentiation(big.NewInt(m), e, n)
-	fmt.Println("CipherText:", cipherText)
+
+	// // Convert the individual characters of the string to their ASCII values
+	plainText := []rune(inputText)
+
+	encryptedText := make([]*big.Int, len(plainText))
+
+	for i, char := range plainText {
+		eValue := new(big.Int).Set(e)
+		cipherText := modularExponentiation(big.NewInt(int64(char)), eValue, n)
+		encryptedText[i] = cipherText
+	}
+
+	encryptedStr := ""
+	for _, cipherText := range encryptedText {
+		var tmp big.Int
+		tmp.Mod(cipherText, big.NewInt(128)) // Modulo 128
+		char := rune(tmp.Int64())            // Convert to ASCII value
+		encryptedStr += string(char)
+	}
+
+	fmt.Println("Encrypted Text:", encryptedStr)
 
 	/*
 		Then the private key is {d, n}.
@@ -240,8 +295,15 @@ func solve() {
 	fmt.Println("Private Key {d,n}: {", d, ",", n, "}")
 
 	// Decrypt the ciphertext using private key exponent d
-	decipherText := modularExponentiation(cipherText, d, n)
-	fmt.Println("DecipherText:", decipherText)
+	decryptedStr := ""
+
+	for _, char := range encryptedText {
+		dValue := new(big.Int).Set(d)
+		decipherText := modularExponentiation(char, dValue, n)
+		decryptedStr += string(rune(decipherText.Int64()))
+	}
+
+	fmt.Println("Decrypted Text:", (decryptedStr))
 }
 
 func main() {
