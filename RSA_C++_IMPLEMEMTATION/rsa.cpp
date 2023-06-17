@@ -74,6 +74,20 @@ uint64_t modInverse(uint64_t e, uint64_t tot_n)
     return inverse;
 }
 
+// generateRandomCoprime generates random e value that is coprime with phi and falls within the specified range of greater than or equal to 2 and less than phi
+uint64_t generateRandomCoprime(uint64_t phi)
+{
+    while (true)
+    {
+        srand(time(NULL));
+        uint64_t e = rand() % phi;
+        uint64_t x, y;
+        // e must be co-prime and smaller than phi
+        if (gcdExtended(e, phi, &x, &y) == 1 && e >= 2 && e < phi)
+            return e;
+    }
+}
+
 // Function to perform the Miller-Rabin primality test
 bool millerRabinTest(uint64_t n, int k)
 {
@@ -153,7 +167,7 @@ void solve()
 
     // Enter The Plain Text
     string m;
-    cout<<"Enter Message: "<<endl;
+    cout << "Enter Message: " << endl;
     getline(cin, m);
 
     uint64_t p = generateRandomPrime(numBits);
@@ -177,20 +191,11 @@ void solve()
         have no common factor except 1. Therefore, gcd(e, phi(n)) = 1
     */
 
-    uint64_t e = 2;
     uint64_t phi = (p - 1) * (q - 1);
-    cout << "Phi: " << phi << endl;
 
-    // Find the optimal value of 'e' that is relatively prime to phi(n)
-    while (e < phi)
-    {
-        uint64_t x, y;
-        // e must be co-prime and smaller than phi
-        if (gcdExtended(e, phi, &x, &y) == 1)
-            break;
-        else
-            e++;
-    }
+    // Generate e value that is coprime with phi
+    uint64_t e = generateRandomCoprime(phi);
+    cout << "Phi: " << phi << endl;
 
     cout << "e: " << e << endl;
 
@@ -221,7 +226,7 @@ void solve()
     uint64_t d = modInverse(e, phi);
     cout << "d: " << d << endl;
     cout << "Private Key: {" << d << ", " << n << "}" << endl;
-    
+
     // Decrypt the ciphertext using private key exponent d
     string DecipherText;
     for (auto it : CipherText)
