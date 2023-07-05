@@ -33,7 +33,11 @@ Run The `main.go` file Using Command:
 go run main.go
 ````
 ### Output
-![RSA_GO_IMPLEMENTATION](https://github.com/Sahil-4555/RSA-Encryption/blob/main/assets/RSA_GO.png)
+<div align="center">
+
+![RSA_GO_IMPLEMENTATION](https://www.linkpicture.com/q/RSA_GO.png)
+
+</div>
 
 ## C++ Implementation
 
@@ -46,7 +50,8 @@ Once the compilation process is successful, you can execute the compiled program
 ./rsa
 ```
 ### Output
-![RSA_CPP_IMPLEMENTATION](https://github.com/Sahil-4555/RSA-Encryption/blob/main/assets/RSA_C%2B%2B.png)
+
+![RSA_C++_IMPLEMENTATION](https://www.linkpicture.com/q/RSA_C.png)
 
 ## Customization
 
