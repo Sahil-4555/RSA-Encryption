@@ -51,7 +51,7 @@ Once the compilation process is successful, you can execute the compiled program
 ```
 ### Output
 
-![RSA_C++_IMPLEMENTATION](https://www.linkpicture.com/q/RSA_C.png)
+![RSA_C++_IMPLEMENTATION](https://www.linkpicture.com/q/RSA_C_2.png)
 
 ## Customization
 
