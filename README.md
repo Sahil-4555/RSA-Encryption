@@ -35,7 +35,7 @@ go run main.go
 ### Output
 <div align="center">
 
-![RSA_GO_IMPLEMENTATION](https://www.linkpicture.com/q/RSA_GO.png)
+![RSA_GO_IMPLEMENTATION](https://www.linkpicture.com/q/RSA_GO_3.png)
 
 </div>
 
